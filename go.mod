@@ -1,4 +1,4 @@
-module github.com/<tu_usuario>/<tu_repositorio>
+module github.com/holydown/Holy
 
 go 1.21
 
