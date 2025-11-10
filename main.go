@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/joho/godotenv"
 )
 
 var (
@@ -17,13 +18,20 @@ var (
 )
 
 func main() {
+	// Cargar variables de entorno desde el archivo .env
+	err := godotenv.Load()
+	if err != nil {
+		log.Println("Advertencia: No se encontró el archivo .env. Se usarán variables de entorno del sistema.")
+	}
+
+	// Obtener el token del bot de la variable de entorno
 	Token = os.Getenv("DISCORD_TOKEN")
 	if Token == "" {
 		log.Fatal("Error: DISCORD_TOKEN no está definido en las variables de entorno.")
 		return
 	}
 	OwnerID = os.Getenv("OWNER_ID")
-	if OwnerID == "" {
+	if OwnerID == "1422676828161703956" {
 		log.Println("Advertencia: OWNER_ID no está definido, algunas funciones estarán restringidas.")
 	}
 
