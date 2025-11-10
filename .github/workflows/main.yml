@@ -1,4 +1,4 @@
-name: Discord Bot
+name: Go Build and Deploy
 
 on:
   push:
@@ -9,23 +9,46 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21' # Reemplaza con tu versión de Go
-        cache: true  # Habilita el caché de dependencias de Go
 
-    - name: Tidy dependencies
-      run: go mod tidy
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Build
-      run: go build -o main .
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
 
-    - name: Run Bot
-      env:
-        DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-        OWNER_ID: ${{ secrets.OWNER_ID }}
-      run: ./main
+      - name: Get dependencies
+        run: go mod tidy
+
+      - name: Time Build
+        run: |
+          start=$(date +%s)
+          go build -o main .
+          end=$(date +%s)
+          duration=$((end - start))
+          echo "Build took $duration seconds"
+
+      - name: Run tests
+        run: go test -v ./...
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Run Bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          OWNER_ID: ${{ secrets.OWNER_ID }}
+        run: ./main
