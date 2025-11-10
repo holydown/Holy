@@ -30,8 +30,8 @@ func main() {
 		log.Fatal("Error: DISCORD_TOKEN no está definido en las variables de entorno.")
 		return
 	}
-	OwnerID = os.Getenv("OWNER_ID")
-	if OwnerID == "1422676828161703956" {
+	OwnerID = os.Getenv("1422676828161703956")
+	if OwnerID == "" {
 		log.Println("Advertencia: OWNER_ID no está definido, algunas funciones estarán restringidas.")
 	}
 
