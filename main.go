@@ -5,93 +5,67 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
-)
-
-var (
-	Token   string
-	OwnerID string // Reemplaza con tu ID de usuario de Discord
 )
 
 func main() {
-	// Cargar variables de entorno desde el archivo .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Advertencia: No se encontró el archivo .env. Se usarán variables de entorno del sistema.")
-	}
-
-	// Obtener el token del bot de la variable de entorno
-	Token = os.Getenv("DISCORD_TOKEN")
-	if Token == "" {
-		log.Fatal("Error: DISCORD_TOKEN no está definido en las variables de entorno.")
-		return
-	}
-	OwnerID = os.Getenv("1422676828161703956")
-	if OwnerID == "" {
-		log.Println("Advertencia: OWNER_ID no está definido, algunas funciones estarán restringidas.")
-	}
-
+	// Crear una nueva sesión de Discord usando el token del bot
 	dg, err := discordgo.New("Bot " + Token)
 	if err != nil {
-		fmt.Println("Error al crear la sesión de Discord:", err)
-		return
+		log.Fatalf("Error al crear la sesión de Discord: %v", err)
 	}
 
+	// Registrar el controlador de eventos messageCreate
 	dg.AddHandler(messageCreate)
 
-	dg.Identify = discordgo.Identify{
-		Token: Token,
-		Intents: discordgo.IntentsGuilds |
-			discordgo.IntentsGuildMessages |
-			discordgo.IntentsDirectMessages,
-	}
+	// Especificar las intenciones que necesita el bot
+	dg.Identify.Intents = discordgo.IntentsGuildMessages | discordgo.IntentsDirectMessages | discordgo.IntentsMessageContent
 
+	// Abrir una conexión websocket con Discord
 	err = dg.Open()
 	if err != nil {
-		fmt.Println("Error al abrir la conexión:", err)
-		return
+		log.Fatalf("Error al abrir la conexión de Discord: %v", err)
 	}
 
-	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
+	// Indicar que el bot está funcionando
+	fmt.Println("El bot está funcionando. Presiona Ctrl+C para salir.")
+
+	// Esperar una señal de interrupción para cerrar la conexión
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
 	<-sc
 
+	// Cerrar la conexión de Discord
 	dg.Close()
 }
 
+// messageCreate
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	// Ignorar los mensajes enviados por el propio bot
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	prefix := "!"
+	// Separar el comando y los argumentos
+	args := strings.Split(m.Content, " ")
+	command := args[0]
 
-	if strings.HasPrefix(m.Content, prefix) {
-		command := strings.TrimPrefix(m.Content, prefix)
-		command = strings.SplitN(command, " ", 2)[0] // Obtener solo el primer comando
-		args := strings.SplitN(m.Content, " ", 3)
-
-		switch command {
-		case "ayuda":
-			ayudaCommand(s, m)
-		case "methods":
-			methodsCommand(s, m)
-		case "adduser":
-			addUserCommand(s, m, args)
-		case "deleteuser":
-			deleteUserCommand(s, m, args)
-		case "ataque":
-			ataqueCommand(s, m, args)
-		case "bots":
-			botsCommand(s, m)
-		default:
-			s.ChannelMessageSend(m.ChannelID, "Comando desconocido. Usa !ayuda para ver la lista de comandos.")
-		}
+	// Manejar los diferentes comandos
+	switch command {
+	case "!ayuda":
+		ayudaCommand(s, m)
+	case "!methods":
+		methodsCommand(s, m)
+	case "!adduser":
+		addUserCommand(s, m, args)
+	case "!deleteuser":
+		deleteUserCommand(s, m, args)
+	case "!ataque":
+		ataqueCommand(s, m, args)
+	case "!bots":
+		botsCommand(s, m)
 	}
 }
 
