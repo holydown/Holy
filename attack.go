@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"strconv"
 	"time"
 )
 
@@ -269,7 +268,7 @@ func DNSFlood(target string, duration int) error {
 	}
 
 	return nil
-} // Faltaba una llave de cierre para la función DNSFlood
+}
 
 // NTPFlood
 func NTPFlood(target string, duration int) error {
