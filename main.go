@@ -66,6 +66,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "!ataque":
 		ataqueCommand(s, m, args)
 	case "!bots":
-		botsCommand(s, m, args)
+		// Llamada corregida: botsCommand no espera args según tu definición actual
+		botsCommand(s, m)
 	}
 }
