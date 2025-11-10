@@ -38,7 +38,7 @@ func init() {
 	}
 
 	// Cargar el ID del owner desde las variables de entorno
-	OwnerID = os.Getenv("1422676828161703956")
+	OwnerID = os.Getenv("OWNER_ID") // Corregido: La variable de entorno correcta es "OWNER_ID"
 	if OwnerID == "" {
 		log.Println("Advertencia: OWNER_ID no está definido, algunas funciones estarán restringidas.")
 	}
@@ -239,7 +239,7 @@ func loadAllowedUsers() {
 	defer file.Close()
 
 	var users []string
-	_, err = fmt.Fscan(file, &users)
+	_, err = fmt.Fscanln(file, &users) // Corregido: Usar Fscanln para leer líneas completas
 	if err != nil {
 		log.Printf("Error al leer el archivo de usuarios permitidos: %s\n", err)
 		return
