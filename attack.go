@@ -265,4 +265,36 @@ func DNSFlood(target string, duration int) error {
 		if err != nil {
 			return err
 		}
-		time.Sleep(1 * time.Millisecond) // Envía consultas cada 1 mil
+		time.Sleep(1 * time.Millisecond) // Envía consultas cada 1 milisegundo
+	}
+
+	return nil
+} // Faltaba una llave de cierre para la función DNSFlood
+
+// NTPFlood
+func NTPFlood(target string, duration int) error {
+	// Implementación del ataque NTP Flood
+	// Envía consultas NTP al objetivo durante la duración especificada
+	return fmt.Errorf("NTPFlood not implemented")
+}
+
+// DNSAmplification
+func DNSAmplification(target string, duration int) error {
+	// Implementación del ataque DNS Amplification
+	// Envía consultas DNS al objetivo para amplificar el tráfico
+	return fmt.Errorf("DNSAmplification not implemented")
+}
+
+// NTPAmplification
+func NTPAmplification(target string, duration int) error {
+	// Implementación del ataque NTP Amplification
+	// Envía consultas NTP al objetivo para amplificar el tráfico
+	return fmt.Errorf("NTPAmplification not implemented")
+}
+
+// MixedAmplification
+func MixedAmplification(target string, duration int) error {
+	// Implementación del ataque Mixed Amplification
+	// Envía consultas mixtas al objetivo para amplificar el tráfico
+	return fmt.Errorf("MixedAmplification not implemented")
+}
