@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings" // Importante: Importar el paquete "strings"
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
@@ -65,7 +66,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	case "!ataque":
 		ataqueCommand(s, m, args)
 	case "!bots":
-		botsCommand(s, m)
+		botsCommand(s, m, args)
 	}
 }
-
